@@ -1,0 +1,89 @@
+//
+// Created by sadou on 12/06/2018.
+//
+
+#ifndef HASH_H
+#define HASH_H
+
+#include "List.h"
+
+typedef enum {
+    FAIL,
+    EXIST,
+    SUCC
+} hashStatus ;
+
+template <class T>
+class Hash {
+public:
+    List<T,int> *array;
+    int total_data;
+    int capacity;
+
+    Hash(int size_init) : total_data(0), capacity(size_init) {
+        if(size_init<=0) return;
+        array = new List<T,int>[size_init];
+    }
+
+    Hash() : total_data(0), capacity(10) {
+        array = new List<T,int>[10];
+    }
+
+    hashStatus insert(int key, T* data){
+        int index_to_insert = (key) % capacity; // simple modulo Hash function
+        bool tmp = array[index_to_insert].Find(key);
+        if (tmp) return EXIST;
+        array[index_to_insert].insert(key,data);
+        total_data++;
+        if(total_data == capacity) {
+            copyAndHashAgain();
+        }
+        return SUCC;
+    }
+
+    T* Member(int key){
+        T *returnVal;
+        try {
+            int index_to_search = (key) % capacity;
+            returnVal = array[index_to_search].getDataByKey(key);
+        } catch (std::exception& e){
+            std::cout << e.what() << std::endl;
+        }
+        return returnVal;
+        // if not exist in this list, so throw (const List<T>::NotFound& err)
+    }
+
+    bool isExist(int key){
+        int index_to_search = (key) % capacity;
+        return array[index_to_search].isKeyExist(key);
+    }
+
+    void copyAndHashAgain(){
+        int old_size = capacity;        // old_size  = the old size
+        this->capacity = 2*(capacity); // capacity = the new size
+        auto new_array = new List<T,int>[capacity];
+        typename List<T,int>::Iterator it;
+        for(int i=0; i < old_size; i++){
+            for( it=array[i].begin(); it != array[i].end(); ++it){
+                int index_to_insert = it.getKey() % capacity; // new function of Hash
+                new_array[index_to_insert].insert(it.getKey(),it.getData());
+            }
+        }
+        List<T,int> *del = this->array;
+        this->array = new_array;
+        delete[] del;
+    }
+
+    friend std::ostream &operator<<(std::ostream &os, Hash &h) {
+        for(int i=0; i < h.capacity; i++){
+            os << i << ":" << h.array[i] << std::endl;
+        }
+        return os;
+    }
+
+    ~Hash(){
+        delete[] array;
+    }
+};
+
+#endif //HASH_H
